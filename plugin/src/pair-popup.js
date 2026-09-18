@@ -28,6 +28,7 @@ import {
   toggleCurrent,
   toggleAll,
   selectedAddresses,
+  addCustomAddress,
 } from "./select-list.js";
 import { copyPairingCode, qrKeyAction } from "./copy-pairing-code.js";
 import {
@@ -81,6 +82,7 @@ async function holdFatal(message) {
 }
 
 function renderChecklist(state, warning) {
+  process.stdout.write(HIDE_CURSOR);
   const lines = [
     `${BOLD}Pair a Heeler device${RESET}`,
     "",
@@ -94,10 +96,25 @@ function renderChecklist(state, warning) {
     lines.push(` ${cursor} ${box} ${label}${RESET}`);
   });
   lines.push("");
-  lines.push(`${DIM}up/down move, space toggle, a all, enter confirm, q quit${RESET}`);
+  lines.push(`${DIM}up/down move, space toggle, a all, n add address, enter confirm, q quit${RESET}`);
   if (warning) {
     lines.push("");
     lines.push(`${BOLD}${warning}${RESET}`);
+  }
+  process.stdout.write(CLEAR + lines.join("\n") + "\n");
+}
+
+function renderAddAddress(value, warning) {
+  process.stdout.write(SHOW_CURSOR);
+  const lines = [
+    `${BOLD}Add an address${RESET}`,
+    "",
+    `> ${value}`,
+    "",
+    `${DIM}IP or hostname — enter confirm, escape cancel${RESET}`,
+  ];
+  if (warning) {
+    lines.push("", `${BOLD}${warning}${RESET}`);
   }
   process.stdout.write(CLEAR + lines.join("\n") + "\n");
 }
@@ -190,7 +207,7 @@ function readKeys(onKey) {
   emitKeypressEvents(process.stdin);
   process.stdin.setRawMode(true);
   process.stdin.resume();
-  process.stdin.on("keypress", (_chunk, key) => onKey(key ?? {}));
+  process.stdin.on("keypress", (chunk, key) => onKey(key ?? {}, chunk));
 }
 
 async function main() {
@@ -237,6 +254,7 @@ async function main() {
   let displayedCode = null;
   let lastPayload = null;
   let copiedTimer = null;
+  let promptBuffer = "";
 
   async function cleanup() {
     if (copiedTimer !== null) {
@@ -415,7 +433,7 @@ async function main() {
 
   renderChecklist(state);
 
-  readKeys((key) => {
+  readKeys((key, chunk) => {
     if (closing) {
       return;
     }
@@ -426,6 +444,48 @@ async function main() {
     }
     if (phase === "fatal") {
       void close(1);
+      return;
+    }
+    if (phase === "addAddress") {
+      if (key.ctrl && key.name === "c") {
+        void close(0);
+        return;
+      }
+      if (key.name === "escape") {
+        phase = "select";
+        promptBuffer = "";
+        renderChecklist(state);
+        return;
+      }
+      if (key.name === "return") {
+        const address = promptBuffer.trim().replace(/^\[(.+)\]$/, "$1");
+        if (!address || /\s/.test(address)) {
+          renderAddAddress(promptBuffer, "Enter an IP or hostname without spaces.");
+          return;
+        }
+        state = addCustomAddress(state, address);
+        phase = "select";
+        promptBuffer = "";
+        renderChecklist(state);
+        return;
+      }
+      if (key.name === "backspace" || key.name === "delete") {
+        promptBuffer = promptBuffer.slice(0, -1);
+        renderAddAddress(promptBuffer);
+        return;
+      }
+      if (!key.ctrl && !key.meta) {
+        const ch = typeof chunk === "string" && chunk.length === 1 ? chunk : key.sequence;
+        if (
+          typeof ch === "string" &&
+          ch.length === 1 &&
+          ch.charCodeAt(0) >= 32 &&
+          ch.charCodeAt(0) !== 127
+        ) {
+          promptBuffer += ch;
+          renderAddAddress(promptBuffer);
+        }
+      }
       return;
     }
     if (key.name === "q" || key.name === "escape" || (key.ctrl && key.name === "c")) {
@@ -476,6 +536,11 @@ async function main() {
       case "a":
         state = toggleAll(state);
         break;
+      case "n":
+        phase = "addAddress";
+        promptBuffer = "";
+        renderAddAddress(promptBuffer);
+        return;
       case "return": {
         const addresses = selectedAddresses(state);
         if (addresses.length === 0) {

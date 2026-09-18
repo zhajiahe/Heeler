@@ -7,6 +7,7 @@ import {
   toggleCurrent,
   toggleAll,
   selectedAddresses,
+  addCustomAddress,
 } from "../src/select-list.js";
 
 const candidates = [
@@ -58,5 +59,33 @@ suite("selection list", () => {
       selectedAddresses(state),
       ["192.168.1.42", "100.101.102.103", "203.0.113.9"],
     );
+  });
+
+  test("addCustomAddress appends a checked custom row", () => {
+    const state = addCustomAddress(createSelection(candidates), "203.0.113.10");
+    assert.equal(state.cursor, 3);
+    assert.deepEqual(state.items[3], {
+      address: "203.0.113.10",
+      family: "custom",
+      interfaceName: "custom",
+      checked: true,
+    });
+    assert.deepEqual(selectedAddresses(state), [
+      "192.168.1.42",
+      "100.101.102.103",
+      "203.0.113.10",
+    ]);
+  });
+
+  test("addCustomAddress selects a duplicate instead of adding a second row", () => {
+    const state = addCustomAddress(createSelection(candidates), "203.0.113.9");
+    assert.equal(state.cursor, 2);
+    assert.equal(state.items.length, 3);
+    assert.equal(state.items[2].checked, true);
+    assert.deepEqual(selectedAddresses(state), [
+      "192.168.1.42",
+      "100.101.102.103",
+      "203.0.113.9",
+    ]);
   });
 });
