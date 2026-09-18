@@ -30,3 +30,21 @@ export function toggleAll(state) {
 export function selectedAddresses(state) {
   return state.items.filter((item) => item.checked).map((item) => item.address);
 }
+
+/** Append a typed address, already checked. A duplicate is selected, not added twice. */
+export function addCustomAddress(state, address) {
+  const existing = state.items.findIndex((item) => item.address === address);
+  if (existing !== -1) {
+    const items = state.items.map((item, index) =>
+      index === existing ? { ...item, checked: true } : item,
+    );
+    return { items, cursor: existing };
+  }
+  return {
+    items: [
+      ...state.items,
+      { address, family: "custom", interfaceName: "custom", checked: true },
+    ],
+    cursor: state.items.length,
+  };
+}

@@ -95,12 +95,12 @@ herdr plugin action invoke heeler.pair
 ```
 
 The popup checklist: arrows or `j`/`k` move, space toggles, `a` toggles all,
-enter mints a Bootstrap Key and renders the QR, `q`/escape closes (revoking
-the key). On the QR screen, `c` copies the Pairing Code; any other key
-closes. When the code expires, enter generates a fresh one. Once a device
-enrolls, the QR is replaced by a success screen showing the enrolled Device
-Key's fingerprint and label; press `r` there to revoke that key (removing its
-`authorized_keys` line), or any other key to close.
+`n` adds an IP or hostname, enter mints a Bootstrap Key and renders the QR,
+`q`/escape closes (revoking the key). On the QR screen, `c` copies the Pairing
+Code; any other key closes. When the code expires, enter generates a fresh
+one. Once a device enrolls, the QR is replaced by a success screen showing
+the enrolled Device Key's fingerprint and label; press `r` there to revoke
+that key (removing its `authorized_keys` line), or any other key to close.
 
 Known limitation: the advertised SSH port is currently fixed at 22.
 

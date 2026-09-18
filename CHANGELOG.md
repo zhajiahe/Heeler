@@ -12,6 +12,8 @@ Entries reference the issue that motivated them.
 - Choose an existing Workspace or New Workspace from the same dropdown in
   New Agent. New Workspace opens a remote directory browser. The latest directory stays at the
   bottom of the dropdown, with its name and full path shown when selected. (PR #305)
+- Pairing Codes can include a typed IP or hostname that is not on the Host's
+  network interfaces. In the pairing popup, press `n` to add it. (PR #1)
 
 ### Changed
 
